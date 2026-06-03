@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field as PydanticField
 from influxdb_client import InfluxDBClient, Point
 
 # 1. Define your data validation layout using Pydantic
-class SensorModel(BaseModel):
+class SensorDataModel(BaseModel):
     measurement: Literal["homestead"] = "homestead"
     
     # Tags (Metadata for indexing)
