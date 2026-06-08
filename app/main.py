@@ -1,15 +1,13 @@
 from fastapi import FastAPI
-
 from api.v1 import router as v1_router
-# import settings
+# from settings import APP_NAME, APP_VERSION
 
 app = FastAPI()
 
 
 # app = FastAPI(
-#     title=settings.APP_NAME,
-#     version=settings.APP_VERSION,
-#     lifespan=lifespan,
+#     title=APP_NAME,
+#     version=settings.APP_VERSION
 # )
 
 # Routers
