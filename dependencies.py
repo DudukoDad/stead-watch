@@ -3,9 +3,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
 
-from models.sensor_metadata_model import Base
-from repositories.sensor_metadata_repo import SqlAlchemySensorRepository
-from repositories.sensor_data_repo import InfluxClientRepository
+from models import Base
+from repositories import SqlAlchemySensorRepository
+from repositories import InfluxClientRepository
 # Load the env variables
 load_dotenv()
 
