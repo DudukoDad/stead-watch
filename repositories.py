@@ -79,7 +79,7 @@ class InfluxClientRepository(SensorRepository):
         r = self._client.write( record=sensor_data)
         print(r)
 
-    def get_by_id(self,id: str, location: str) -> list[tuple]:
+    def get_by_id(self,id: str) -> list[tuple]:
         measurement_name = 'homestead'
         target_id = id
         # Construct the SQL query
