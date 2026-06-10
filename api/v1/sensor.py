@@ -26,6 +26,9 @@ async def add_sensor_data(sensor_data: SensorDataModel, repo=Depends(get_influxd
         raise HTTPException(status_code=500, detail=str(e))
     return sensor_data.model_dump()
 
+# @router.get("/sensor-data/")
+# async def get_sensor_data():
+#     return {"message": "Sensor data retrieved!!!"}
 
 @router.get("/sensor-data/{device_id}", status_code=status.HTTP_200_OK)
 async def get_sensor_data(device_id: str, repo=Depends(get_influxdb_repository)):
