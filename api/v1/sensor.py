@@ -4,8 +4,8 @@ from typing import Dict
 from dependencies import get_sqlalchemy_repository, get_influxdb_repository
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from schemas.sensor_data import SensorDataModel
-from schemas.sensor_metadata import SensorModel
+from schemas import SensorDataModel
+from schemas import SensorModel
 
 
 
@@ -17,18 +17,21 @@ router = APIRouter(tags=["sensors"])
 async def add_sensor_data(sensor_data: SensorDataModel, repo=Depends(get_influxdb_repository)):
     """
     Endpoint to receive sensor data from IoT devices."""
+    device = get_sqlalchemy_repository().get_by_id(sensor_data.device_id)  # Check if sensor exists
+    if not device:
+        raise HTTPException(status_code=404, detail="Device not found")
     try:
         repo.create(sensor_data.to_influx_point())
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     return sensor_data.model_dump()
 
-@router.get("/sensor-data/{device_id}/{location}", status_code=status.HTTP_200_OK)
-async def get_sensor_data(device_id: str, location: str, repo=Depends(get_influxdb_repository)):
+
+@router.get("/sensor-data/{device_id}", status_code=status.HTTP_200_OK)
+async def get_sensor_data(device_id: str, repo=Depends(get_influxdb_repository)):
     """
     Endpoint to retrieve sensor data."""
-    data = repo.get_by_id(device_id, location)
-    print(data)
+    data = repo.get_by_id(device_id)
     return data
 
 @router.post("/sensor/",  status_code=status.HTTP_201_CREATED)

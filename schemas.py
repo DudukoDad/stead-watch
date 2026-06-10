@@ -19,3 +19,10 @@ class SensorDataModel(BaseModel):
             .field("sensor_data", self.sensor_data)
             .time(int(self.timestamp.timestamp()))
         )
+
+class SensorModel(BaseModel):
+    device_id: int
+    friendly_name: str
+    location: str
+    refresh_rate: str
+    is_active: bool
