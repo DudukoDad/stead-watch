@@ -2,37 +2,28 @@ from datetime import datetime, timedelta, timezone
 import os
 from typing import Annotated
 
+from dependencies import get_user_repository
 import jwt
 from jwt.exceptions import InvalidTokenError
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from sqlalchemy.orm import Session
 
 from app.settings import APP_VERSION, APP_NAME, ACCESS_TOKEN_EXPIRE_MINUTES 
+from repositories import UserRepository
 from schemas import User, UserInDB, Token, TokenData
-from app.security import fake_decode_token, fake_hash_password, verify_password, get_password_hash, DUMMY_HASH, password_hash
+from app.security import verify_password, DUMMY_HASH, password_hash
 from api.v1 import router as v1_router
 # from settings import APP_NAME, APP_VERSION
 
 # app = FastAPI()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-fake_users_db = {
-    "johndoe": {
-        "username": "johndoe",
-        "full_name": "John Doe",
-        "email": "johndoe@example.com",
-        "hashed_password": "$argon2id$v=19$m=65536,t=3,p=4$wagCPXjifgvUFBzq4hqe3w$CYaIb8sB+wtD+Vu/P4uod1+Qof8h+1g7bbDlBID48Rc",
-        "disabled": False,
-    }
-}
 
-def get_user(db, username: str):
-    if username in db:
-        user_dict = db[username]
-        return UserInDB(**user_dict)
     
-def authenticate_user(fake_db, username: str, password: str):
-    user = get_user(fake_db, username)
+def authenticate_user(db: Session, username: str, password: str):
+    user = db.get_by_username(username)
+    # If the user does not exist, we still want to verify the password against a dummy hash to prevent timing attacks
     if not user:
         verify_password(password, DUMMY_HASH)
         return False
@@ -52,7 +43,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
+async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], repo=Depends(get_user_repository)):
     SECRET_KEY = os.environ["SECRET_KEY"]
     ALGORITHM = os.environ["ALGORITHM"]
     credentials_exception = HTTPException(
@@ -68,7 +59,7 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
         token_data = TokenData(username=username)
     except InvalidTokenError:
         raise credentials_exception
-    user = get_user(fake_users_db, username=token_data.username)
+    user = repo.get_by_username(username=token_data.username)
     if user is None:
         raise credentials_exception
     return user
@@ -88,11 +79,11 @@ app = FastAPI(
 # Routers
 app.include_router(v1_router.router, prefix="/api")
 
-@app.post("/token")
+@app.post("/login")
 async def login_for_access_token(
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()], repo=Depends(get_user_repository)
 ) -> Token:
-    user = authenticate_user(fake_users_db, form_data.username, form_data.password)
+    user = authenticate_user(repo, form_data.username, form_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -105,6 +96,16 @@ async def login_for_access_token(
     )
     return Token(access_token=access_token, token_type="bearer")
 
+@app.post("/create-user", status_code=status.HTTP_201_CREATED)
+async def add_user(user: User, password: str, repo=Depends(get_user_repository)):
+    if repo.exists(user.username):
+        raise HTTPException(status_code=400, detail="User with this username already exists")
+    try:
+        new_user = repo.create(user, password)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+    return new_user.model_dump()
 
 @app.get("/users/me")
 async def read_users_me(current_user: Annotated[User, Depends(get_current_user)]):

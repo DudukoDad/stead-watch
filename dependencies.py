@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from pathlib import Path
 
 from models import Base
-from repositories import SensorRepository, InfluxClientRepository
+from repositories import SensorRepository, InfluxClientRepository, Repository, UserRepository
 # Load the env variables
 load_dotenv()
 
@@ -40,7 +40,7 @@ def get_influxdb_repository():
 
     return InfluxClientRepository(token, org, bucket, host, port)
 
-def get_sqllite_repository():
+def get_sqllite_repository(repository_type: Repository):
     db_name = os.getenv("db_name", "stead_watch.db")
 
     base_dir = Path(__file__).resolve().parent
@@ -51,4 +51,11 @@ def get_sqllite_repository():
     Base.metadata.create_all(engine)
 
     Session = sessionmaker(bind=engine, autoflush=False, autocommit=False)
-    return SensorRepository(Session())
+    return repository_type(Session())
+
+
+def get_user_repository():
+    return get_sqllite_repository(UserRepository)
+
+def get_sensor_repository():
+    return get_sqllite_repository(SensorRepository)
