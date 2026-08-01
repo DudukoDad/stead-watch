@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Dict
 
-from dependencies import get_sqlalchemy_repository, get_influxdb_repository
+from dependencies import get_sqlalchemy_repository, get_influxdb_repository, get_sqllite_repository
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from schemas import SensorDataModel
@@ -48,18 +48,19 @@ async def get_sensor_data(device_id: str, repo=Depends(get_influxdb_repository))
     return data.model_dump()
 
 @router.post("/sensor/",  status_code=status.HTTP_201_CREATED)
-async def add_sensor(sensor: SensorModel, repo=Depends(get_sqlalchemy_repository)):
+async def add_sensor(sensor: SensorModel, repo=Depends(get_sqllite_repository)):
     if repo.exists(sensor.device_id):
         raise HTTPException(status_code=400, detail="Device with this ID already exists")
     try:
         new_sensor = repo.create(sensor)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    print("shit")
     return new_sensor.model_dump()
     
 
 @router.get("/sensor/{device_id}")
-async def get_sensor_data(device_id: str, repo=Depends(get_sqlalchemy_repository)):
+async def get_sensor_data(device_id: str, repo=Depends(get_sqllite_repository)):
     if not repo.exists(device_id):
         raise HTTPException(status_code=404, detail="Device not found")
     
@@ -67,6 +68,7 @@ async def get_sensor_data(device_id: str, repo=Depends(get_sqlalchemy_repository
         sensor = repo.get_by_id(device_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    return sensor.model_dump()
+    print(type(sensor))
+    return sensor
 
 

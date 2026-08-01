@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from models import Sensor
 from abc import ABC, abstractmethod
 
-class SensorRepository(ABC):
+class Repository(ABC):
     @abstractmethod
     def get_by_id(self, device_id: str):
         pass
@@ -11,10 +11,10 @@ class SensorRepository(ABC):
     def create(self, sensor: Sensor) -> None:
         pass
     @abstractmethod
-    def exists(self) -> bool:
+    def exists(self, device_id) -> bool:
         pass
 
-class SqlAlchemySensorRepository(SensorRepository):
+class SensorRepository(Repository):
     def __init__(self, session: Session):
         self.session = session
 
@@ -57,7 +57,7 @@ class SqlAlchemySensorRepository(SensorRepository):
         return True
     
 
-class InfluxClientRepository(SensorRepository):
+class InfluxClientRepository(Repository):
     """ A simple wrapper around the InfluxDBClient to handle writing and querying data. """
     def __init__(self,token,org, database, host, port): 
         self.database = database
@@ -79,9 +79,9 @@ class InfluxClientRepository(SensorRepository):
         r = self._client.write( record=sensor_data)
         print(r)
 
-    def get_by_id(self,id: str) -> list[tuple]:
+    def get_by_id(self, device_id: str) -> list[tuple]:
         measurement_name = 'homestead'
-        target_id = id
+        target_id = device_id
         # Construct the SQL query
         # Note: replace 'id_column_name' with your actual tag or field name for the ID
         query = f"SELECT * FROM {measurement_name} WHERE device_id = '{target_id}'"
