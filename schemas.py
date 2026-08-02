@@ -7,6 +7,7 @@ from influxdb_client_3  import Point
 
 class User(BaseModel):
     username: str
+    role: str | None = None
     email: str | None = None
     full_name: str | None = None
     disabled: bool | None = None

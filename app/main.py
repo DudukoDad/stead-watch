@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 import os
-from typing import Annotated
+from typing import Annotated, List
 
 from dependencies import get_user_repository
 import jwt
@@ -20,7 +20,7 @@ from api.v1 import router as v1_router
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 
-    
+
 def authenticate_user(db: Session, username: str, password: str):
     user = db.get_by_username(username)
     # If the user does not exist, we still want to verify the password against a dummy hash to prevent timing attacks
@@ -76,6 +76,18 @@ app = FastAPI(
     version=APP_VERSION
 )
 
+class RoleChecker:
+    def __init__(self, allowed_roles: List[str]):
+        self.allowed_roles = allowed_roles
+
+    def __call__(self, user: User = Depends(get_current_user)) -> User:
+        if user.role not in self.allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Operation not permitted for your user role"
+            )
+        return user
+        
 # Routers
 app.include_router(v1_router.router, prefix="/api")
 
@@ -97,7 +109,7 @@ async def login_for_access_token(
     return Token(access_token=access_token, token_type="bearer")
 
 @app.post("/create-user", status_code=status.HTTP_201_CREATED)
-async def add_user(user: User, password: str, repo=Depends(get_user_repository)):
+async def create_user(user: User, password: str, repo=Depends(get_user_repository)):
     if repo.exists(user.username):
         raise HTTPException(status_code=400, detail="User with this username already exists")
     try:
@@ -105,7 +117,7 @@ async def add_user(user: User, password: str, repo=Depends(get_user_repository))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-    return new_user.model_dump()
+    return new_user
 
 @app.get("/users/me")
 async def read_users_me(current_user: Annotated[User, Depends(get_current_user)]):

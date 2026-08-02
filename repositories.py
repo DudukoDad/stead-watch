@@ -79,6 +79,8 @@ class UserRepository(BaseRepository):
                 self.session.add(new_record)
                 self.session.commit()
                 self.session.refresh(new_record)
+                returnable_keys = ['username', 'role', 'email', 'full_name' ]
+                new_record = {key: getattr(new_record, key) for key in returnable_keys}
                 return new_record
     def get_by_username(self, username: str) -> Base | None:
                 return self.session.query(self.model).filter(self.model.username == username).first()
