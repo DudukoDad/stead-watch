@@ -47,7 +47,7 @@ class SensorDataModel(BaseModel):
         )
 
 class SensorModel(BaseModel):
-    device_id: int
+    user_id: int
     friendly_name: str
     location: str
     refresh_rate: str

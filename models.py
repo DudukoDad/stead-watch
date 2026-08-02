@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import String
+from sqlalchemy import String, ForeignKey
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -11,6 +11,7 @@ class Sensor(Base):
     # __table_args__ = {"schema": "data"}s
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     friendly_name: Mapped[str] = mapped_column(String(100), nullable=False)
     location: Mapped[str] = mapped_column(String(100), nullable=False)
     # This will be in Cron Format e.g. "*/5 * * * *" for every 5 minutes

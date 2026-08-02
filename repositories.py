@@ -1,6 +1,5 @@
 from influxdb_client_3 import InfluxDBClient3, Point
 from sqlalchemy.orm import Session
-from models import Sensor
 from schemas import UserInDB, UserCreate
 from models import User, Sensor, Base
 from abc import ABC, abstractmethod
@@ -31,6 +30,8 @@ class BaseRepository(Repository):
             return self.session.query(self.model).filter(self.model.id == id).first()
     
     def create(self, sql_alch_model: Base) -> Base:
+            print(sql_alch_model.__repr__)
+            print(sql_alch_model.dict())
             new_record = self.model(**sql_alch_model.dict())
             self.session.add(new_record)
             self.session.commit()
@@ -64,6 +65,8 @@ class SensorRepository(BaseRepository):
             self.model = Sensor
     def get_by_location(self, location: str) -> list[Sensor]:
             return self.session.query(Sensor).filter(Sensor.location == location).all()
+    def get_by_user_id(self, user_id: int) -> list[Sensor]:
+            return self.session.query(Sensor).filter(Sensor.user_id == user_id).all()
 
 class UserRepository(BaseRepository):
     def __init__(self, session: Session):

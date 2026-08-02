@@ -49,14 +49,13 @@ async def get_sensor_data(device_id: str, repo=Depends(get_influxdb_repository))
 
 @router.post("/sensor/",  status_code=status.HTTP_201_CREATED)
 async def add_sensor(sensor: SensorModel, repo=Depends(get_sensor_repository)):
-    if repo.exists(sensor.device_id):
-        raise HTTPException(status_code=400, detail="Device with this ID already exists")
+    print(sensor)
     try:
         new_sensor = repo.create(sensor)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     print("shit")
-    return new_sensor.model_dump()
+    return new_sensor
     
 
 @router.get("/sensor/{device_id}")
@@ -70,5 +69,16 @@ async def get_sensor_data(device_id: str, repo=Depends(get_sensor_repository)):
         raise HTTPException(status_code=500, detail=str(e))
     print(type(sensor))
     return sensor
+
+@router.get("/sensor/user/{user_id}")
+async def get_sensor_data(user_id: str, user_repo=Depends(get_sensor_repository), sensor=Depends(get_sensor_repository)):
+    if not user_repo.exists(user_id):
+        raise HTTPException(status_code=404, detail="User not found")
+    try:
+        sensors = sensor.get_by_user_id(user_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    return sensors
+
 
 
