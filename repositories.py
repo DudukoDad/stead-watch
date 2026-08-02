@@ -1,7 +1,7 @@
 from influxdb_client_3 import InfluxDBClient3, Point
 from sqlalchemy.orm import Session
 from models import Sensor
-from schemas import UserInDB
+from schemas import UserInDB, UserCreate
 from models import User, Sensor, Base
 from abc import ABC, abstractmethod
 from pwdlib import PasswordHash
@@ -73,9 +73,13 @@ class UserRepository(BaseRepository):
     def _get_password_hash(self, password: str) -> str:
         return password_hash.hash(password)
     
-    def create(self, BaseModel: UserInDB, password: str) -> UserInDB:
-                new_record = self.model(**BaseModel.dict())
-                new_record.hashed_password = self._get_password_hash(password)
+    def create(self, user: UserCreate) -> UserInDB:
+                user_data = user.model_dump(exclude={"password"})
+                user_data["hashed_password"] = self._get_password_hash(user.password)
+
+                new_record = self.model(**user_data)
+                print(new_record)
+                
                 self.session.add(new_record)
                 self.session.commit()
                 self.session.refresh(new_record)

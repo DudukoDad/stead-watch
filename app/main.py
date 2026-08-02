@@ -10,9 +10,8 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from app.settings import APP_VERSION, APP_NAME, ACCESS_TOKEN_EXPIRE_MINUTES 
-from repositories import UserRepository
-from schemas import User, UserInDB, Token, TokenData
-from app.security import verify_password, DUMMY_HASH, password_hash
+from schemas import User, Token, TokenData, UserCreate
+from app.security import verify_password, DUMMY_HASH
 from api.v1 import router as v1_router
 # from settings import APP_NAME, APP_VERSION
 
@@ -109,11 +108,11 @@ async def login_for_access_token(
     return Token(access_token=access_token, token_type="bearer")
 
 @app.post("/create-user", status_code=status.HTTP_201_CREATED)
-async def create_user(user: User, password: str, repo=Depends(get_user_repository)):
+async def create_user(user: UserCreate, repo=Depends(get_user_repository)):
     if repo.exists(user.username):
         raise HTTPException(status_code=400, detail="User with this username already exists")
     try:
-        new_user = repo.create(user, password)
+        new_user = repo.create(user)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     

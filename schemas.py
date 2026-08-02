@@ -4,6 +4,12 @@ from pydantic import BaseModel, Field as PydanticField
 from influxdb_client_3  import Point  
 
 
+class UserCreate(BaseModel):
+    username: str
+    role: str | None = None
+    email: str | None = None
+    full_name: str | None = None
+    password: str
 
 class User(BaseModel):
     username: str
