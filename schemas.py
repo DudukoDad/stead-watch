@@ -4,6 +4,32 @@ from pydantic import BaseModel, Field as PydanticField
 from influxdb_client_3  import Point  
 
 
+class UserCreate(BaseModel):
+    username: str
+    role: str | None = None
+    email: str | None = None
+    full_name: str | None = None
+    password: str
+
+class User(BaseModel):
+    username: str
+    role: str | None = None
+    email: str | None = None
+    full_name: str | None = None
+    disabled: bool | None = None
+
+class UserInDB(User):
+    hashed_password: str
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
+class TokenData(BaseModel):
+    username: str | None = None
+
 class SensorDataModel(BaseModel):
     measurement: Literal["homestead"] = "homestead"
     location: str
@@ -21,7 +47,7 @@ class SensorDataModel(BaseModel):
         )
 
 class SensorModel(BaseModel):
-    device_id: int
+    user_id: int
     friendly_name: str
     location: str
     refresh_rate: str

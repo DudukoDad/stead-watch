@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import String
+from sqlalchemy import String, ForeignKey
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -8,9 +8,10 @@ class Base(DeclarativeBase):
 
 class Sensor(Base):
     __tablename__ = "sensor_info"
-    __table_args__ = {"schema": "data"}
+    # __table_args__ = {"schema": "data"}s
 
-    device_id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     friendly_name: Mapped[str] = mapped_column(String(100), nullable=False)
     location: Mapped[str] = mapped_column(String(100), nullable=False)
     # This will be in Cron Format e.g. "*/5 * * * *" for every 5 minutes
@@ -19,8 +20,19 @@ class Sensor(Base):
     is_active: Mapped[bool] = mapped_column(default=True)
 
     def __repr__(self) -> str:
-        return f"Sensor(device_id={self.device_id}, location='{self.location}', refresh_rate='{self.refresh_rate}', create_time='{self.create_time}', is_active={self.is_active})"
+        return f"Sensor(id={self.id}, location='{self.location}', refresh_rate='{self.refresh_rate}', create_time='{self.create_time}', is_active={self.is_active})"
 
     
+class User(Base):
+    __tablename__ = "users"
 
-   
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    username: Mapped[str] = mapped_column(String(50))
+    role: Mapped[str] = mapped_column(String(50), nullable=True)
+    email: Mapped[str] = mapped_column(String(100), nullable=True)
+    full_name: Mapped[str] = mapped_column(String(100), nullable=True)
+    hashed_password: Mapped[str] = mapped_column(String(200), nullable=False)
+    disabled: Mapped[bool] = mapped_column(default=False)
+
+    def __repr__(self) -> str:
+        return f"User(username='{self.username}', email='{self.email}', full_name='{self.full_name}', disabled={self.disabled})"

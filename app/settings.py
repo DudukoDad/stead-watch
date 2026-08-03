@@ -1,3 +1,4 @@
 
 APP_NAME = "Stead Watch API"
 APP_VERSION = "0.1.0"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30  # 30 minutes
