@@ -7,11 +7,13 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from schemas import SensorDataModel
 from schemas import SensorModel
 
-
+from app.auth import RoleChecker, get_current_user
 
 
 router = APIRouter(tags=["sensors"])
 
+admin_role_checker = RoleChecker(allowed_roles=["admin"])
+user_role_checker = RoleChecker(allowed_roles=["user"])
 
 @router.post("/sensor-data/", status_code=status.HTTP_201_CREATED)
 async def add_sensor_data(sensor_data: SensorDataModel, repo=Depends(get_influxdb_repository)):
@@ -59,7 +61,7 @@ async def add_sensor(sensor: SensorModel, repo=Depends(get_sensor_repository)):
     
 
 @router.get("/sensor/{device_id}")
-async def get_sensor_data(device_id: str, repo=Depends(get_sensor_repository)):
+async def get_sensor_data(device_id: str, repo=Depends(get_sensor_repository), role_check=Depends(RoleChecker("admin"))):
     if not repo.exists(device_id):
         raise HTTPException(status_code=404, detail="Device not found")
     
@@ -70,12 +72,12 @@ async def get_sensor_data(device_id: str, repo=Depends(get_sensor_repository)):
     print(type(sensor))
     return sensor
 
-@router.get("/sensor/user/{user_id}")
-async def get_sensor_data(user_id: str, user_repo=Depends(get_sensor_repository), sensor=Depends(get_sensor_repository)):
-    if not user_repo.exists(user_id):
+@router.get("/sensor/user/")
+async def get_sensor_data( user_repo=Depends(get_sensor_repository), sensor=Depends(get_sensor_repository), role_check=Depends(admin_role_checker), user=Depends(get_current_user)):
+    if not user_repo.exists(user.id):
         raise HTTPException(status_code=404, detail="User not found")
     try:
-        sensors = sensor.get_by_user_id(user_id)
+        sensors = sensor.get_by_user_id(user.id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     return sensors
